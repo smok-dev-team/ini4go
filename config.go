@@ -95,6 +95,7 @@ func (this *RawConfigParser) load(r io.Reader) error {
 	return nil
 }
 
+////////////////////////////////////////////////////////////////////////////////
 func (this *RawConfigParser) NewSection(name string) *Section {
 	this.Lock()
 	defer this.Unlock()
@@ -125,6 +126,26 @@ func (this *RawConfigParser) HasSection(section string) bool {
 	return ok
 }
 
+func (this *RawConfigParser) RemoveSection(section string) {
+	delete(this.sections, section)
+}
+
+////////////////////////////////////////////////////////////////////////////////
+func (this *RawConfigParser) Option(section, option string) *Option {
+	var s = this.Section(section)
+	if s != nil {
+		return s.Option(option)
+	}
+	return nil
+}
+
+func (this *RawConfigParser) Options(section string) []string {
+	var s = this.Section(section)
+	if s != nil {
+		return s.Options()
+	}
+	return nil
+}
 
 func (this *RawConfigParser) HasOption(section, option string) bool {
 	if s, ok := this.sections[section]; ok {
@@ -135,6 +156,17 @@ func (this *RawConfigParser) HasOption(section, option string) bool {
 	return false
 }
 
+func (this *RawConfigParser) RemoveOption(section, option string) {
+	this.Lock()
+	defer this.Unlock()
+
+	var s = this.sections[section]
+	if s != nil {
+		s.RemoveOption(option)
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
 func (this *RawConfigParser) GetValue(section, option string) string {
 	var s = this.sections[section]
 	if s != nil {

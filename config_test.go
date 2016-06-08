@@ -22,7 +22,7 @@ func TestSectionNameRegex(t *testing.T) {
 func TestOptionIsExist(t *testing.T) {
 	var r = &RawConfigParser{}
 	r.LoadFile("./test.conf")
-	fmt.Println(r.HasOption("defaults", "sk22"))
+	fmt.Println(r.HasOption("default", "sk2"))
 }
 
 func TestLoadFile(t *testing.T) {

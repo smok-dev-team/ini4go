@@ -22,12 +22,24 @@ func (this *Section) NewOption(name, iv, value string) {
 	}
 }
 
+func (this *Section) RemoveOption(name string) {
+	delete(this.options, name)
+}
+
 func (this *Section) HasOption(name string) bool {
 	var _, ok = this.options[name]
 	return ok
 }
 
-func (this *Section) GetOption(name string) *Option {
+func (this *Section) Option(name string) *Option {
 	var opt = this.options[name]
 	return opt
+}
+
+func (this *Section) Options() []string {
+	var oList = make([]string, 0, len(this.options))
+	for key := range this.options {
+		oList = append(oList, key)
+	}
+	return oList
 }
