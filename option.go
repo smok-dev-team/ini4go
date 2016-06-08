@@ -7,11 +7,11 @@ type Option struct {
 	comments []string
 }
 
-func NewOption(key, iv, value string) *Option {
+func NewOption(key, iv string, value []string) *Option {
 	var opt = &Option{}
 	opt.key = key
 	opt.iv = iv
-	opt.value = []string{value}
+	opt.value = value
 	return opt
 }
 
@@ -41,6 +41,18 @@ func (this *Option) Value() string {
 	return ""
 }
 
+func (this *Option) SetValue(v string) {
+	this.value = []string{v}
+}
+
+func (this *Option) AppendValue(v ...string) {
+	this.value = append(this.value, v...)
+}
+
 func (this *Option) ListValue() []string {
 	return this.value
+}
+
+func (this *Option) String() string {
+	return this.Value()
 }
