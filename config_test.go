@@ -50,7 +50,11 @@ func TestNew(t *testing.T) {
 	r.SetValue("s1", "k2", "v2")
 	r.SetValue("s2", "k1", "v1")
 
+	r.MustOption("s3", "kk").AppendValue("adfsfdfsdfsdf")
+
 	r.MustOption("s3", "kk").AppendValue("sdfsf", "Ser", "xc")
+
+	fmt.Println(r.MustValue("s3", "kk", "dsdf"))
 
 	r.WriteToFile("./a.ini")
 }

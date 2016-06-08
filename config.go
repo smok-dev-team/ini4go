@@ -120,7 +120,9 @@ func (this *rawConfigParser) load(r io.Reader) error {
 		optValue = strings.TrimSpace(optValue)
 
 		if optName != "" {
+			this.Lock()
 			currentSection.NewOption(optName, optIV, []string{optValue}, comments)
+			this.Unlock()
 			comments = nil
 		}
 	}
@@ -225,6 +227,10 @@ func (this *rawConfigParser) RemoveSection(section string) {
 ////////////////////////////////////////////////////////////////////////////////
 func (this *rawConfigParser) MustOption(section, option string) *Option {
 	var s = this.MustSection(section)
+
+	this.RLock()
+	defer this.RUnlock()
+
 	var opt = s.MustOption(option)
 	return opt
 }
@@ -275,6 +281,10 @@ func (this *rawConfigParser) RemoveOption(section, option string) {
 ////////////////////////////////////////////////////////////////////////////////
 func (this *rawConfigParser) SetValue(section, option string, value string) {
 	var s = this.NewSection(section)
+
+	this.Lock()
+	defer this.Unlock()
+
 	s.NewOption(option, "=", []string{value}, nil)
 }
 
