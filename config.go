@@ -7,6 +7,8 @@ import (
 	"bufio"
 	"os"
 	"sync"
+	"github.com/smartwalle/going/container"
+	"bytes"
 )
 
 const (
@@ -14,7 +16,7 @@ const (
 )
 
 ////////////////////////////////////////////////////////////////////////////////
-var sectionRegexp = regexp.MustCompile(`\[(?P<header>[^]]+)\]$`)
+var sectionRegexp = regexp.MustCompile(`^\[(?P<header>[^]]+)\]$`)
 func getSectionName(src string) (name string) {
 	var rList = sectionRegexp.FindStringSubmatch(src)
 	if len(rList) >= 2 {
@@ -35,15 +37,22 @@ func getOptionAndValue(src string) (option, vi, value string) {
 ////////////////////////////////////////////////////////////////////////////////
 type RawConfigParser struct {
 	sync.RWMutex
-	sections map[string]*Section
+	sectionKeys []string
+	sections    map[string]*Section
 }
 
-func (this *RawConfigParser) LoadFile(file string) error {
-	var f, err = os.OpenFile("./test.conf", os.O_RDONLY, 0)
-	if err != nil {
-		return err
+func (this *RawConfigParser) LoadFiles(files ...string) error {
+	for _, file := range files {
+		var f, err = os.OpenFile(file, os.O_RDONLY, 0)
+		if err != nil {
+			return err
+		}
+		err = this.load(f)
+		if err != nil {
+			return err
+		}
 	}
-	return this.load(f)
+	return nil
 }
 
 func (this *RawConfigParser) load(r io.Reader) error {
@@ -57,6 +66,7 @@ func (this *RawConfigParser) load(r io.Reader) error {
 
 	var currentSection *Section
 
+	var index = 0
 	for {
 		if line, _, err = reader.ReadLine(); err != nil {
 			if err == io.EOF {
@@ -64,6 +74,11 @@ func (this *RawConfigParser) load(r io.Reader) error {
 			}
 			return err
 		}
+
+		if index == 0 {
+			line = bytes.TrimPrefix(line, []byte("\xef\xbb\xbf"))
+		}
+		index++
 
 		var sLine = strings.TrimSpace(string(line))
 
@@ -73,7 +88,7 @@ func (this *RawConfigParser) load(r io.Reader) error {
 		}
 
 		var sectionName = getSectionName(sLine)
-		if len(sectionName) > 0 {
+		if len(sectionName) > 0 && strings.ToLower(sectionName) != k_DEFAULT_SECTION {
 			currentSection = this.NewSection(sectionName)
 			continue
 		}
@@ -95,6 +110,11 @@ func (this *RawConfigParser) load(r io.Reader) error {
 	return nil
 }
 
+// TODO 写入文件
+func (this *RawConfigParser) WriteToFile(file string) error {
+	return nil
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 func (this *RawConfigParser) NewSection(name string) *Section {
 	this.Lock()
@@ -104,6 +124,7 @@ func (this *RawConfigParser) NewSection(name string) *Section {
 	if section == nil {
 		section = NewSection(name)
 		this.sections[name] = section
+		this.sectionKeys = append(this.sectionKeys, name)
 	}
 	return section
 }
@@ -113,12 +134,16 @@ func (this *RawConfigParser) Section(name string) *Section {
 	return s
 }
 
-func (this *RawConfigParser) Sections() []string {
-	var kList = make([]string, 0, len(this.sections))
-	for key := range this.sections {
-		kList = append(kList, key)
+func (this *RawConfigParser) SectionNames() []string {
+	return this.sectionKeys
+}
+
+func (this *RawConfigParser) SectionList() []*Section {
+	var sList = make([]*Section, 0, len(this.sections))
+	for _, value := range this.sections {
+		sList = append(sList, value)
 	}
-	return kList
+	return sList
 }
 
 func (this *RawConfigParser) HasSection(section string) bool {
@@ -128,6 +153,7 @@ func (this *RawConfigParser) HasSection(section string) bool {
 
 func (this *RawConfigParser) RemoveSection(section string) {
 	delete(this.sections, section)
+	container.Remove(&this.sectionKeys, section)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -142,7 +168,15 @@ func (this *RawConfigParser) Option(section, option string) *Option {
 func (this *RawConfigParser) Options(section string) []string {
 	var s = this.Section(section)
 	if s != nil {
-		return s.Options()
+		return s.OptionKeys()
+	}
+	return nil
+}
+
+func (this *RawConfigParser) OptionList(section string) []*Option {
+	var s = this.Section(section)
+	if s != nil {
+		return s.OptionList()
 	}
 	return nil
 }
@@ -167,12 +201,18 @@ func (this *RawConfigParser) RemoveOption(section, option string) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+func (this *RawConfigParser) SetValue(section, option string, value string) {
+	var s = this.NewSection(section)
+	s.NewOption(option, "=", value)
+}
+
+////////////////////////////////////////////////////////////////////////////////
 func (this *RawConfigParser) GetValue(section, option string) string {
 	var s = this.sections[section]
 	if s != nil {
 		var opt = s.options[option]
 		if opt != nil {
-			return opt.value[0]
+			return opt.Value()
 		}
 	}
 	return ""
@@ -183,7 +223,7 @@ func (this *RawConfigParser) GetListValue(section, option string) []string {
 	if s != nil {
 		var opt = s.options[option]
 		if opt != nil {
-			return opt.value
+			return opt.ListValue()
 		}
 	}
 	return nil
