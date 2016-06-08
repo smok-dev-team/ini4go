@@ -6,6 +6,7 @@ type Section struct {
 	name       string
 	optionKeys []string
 	options    map[string]*Option
+	comments   []string
 }
 
 func NewSection(name string) *Section {
@@ -19,7 +20,22 @@ func (this *Section) Name() string {
 	return this.name
 }
 
-func (this *Section) NewOption(key, iv, value string) {
+func (this *Section) Comments() []string {
+	return this.comments
+}
+
+func (this *Section) Comment() string {
+	if len(this.comments) > 0 {
+		return this.comments[0]
+	}
+	return ""
+}
+
+func (this *Section) AddComment(comment string) {
+	this.comments = append(this.comments, comment)
+}
+
+func (this *Section) NewOption(key, iv, value string, comments []string) {
 	var opt = this.options[key]
 	if opt == nil {
 		opt = NewOption(key, iv, value)
@@ -27,6 +43,10 @@ func (this *Section) NewOption(key, iv, value string) {
 		this.optionKeys = append(this.optionKeys, key)
 	} else {
 		opt.value = append(opt.value, value)
+	}
+
+	if comments != nil {
+		opt.comments = append(opt.comments, comments...)
 	}
 }
 

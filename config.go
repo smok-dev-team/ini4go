@@ -36,13 +36,24 @@ func getOptionAndValue(src string) (option, vi, value string) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-type RawConfigParser struct {
+type rawConfigParser struct {
 	sync.RWMutex
 	sectionKeys []string
 	sections    map[string]*Section
 }
 
-func (this *RawConfigParser) LoadFiles(files ...string) error {
+////////////////////////////////////////////////////////////////////////////////
+type Config struct {
+	rawConfigParser
+}
+
+func NewConfig() *Config {
+	var c = &Config{}
+	c.rawConfigParser.sections = make(map[string]*Section)
+	return c
+}
+
+func (this *rawConfigParser) LoadFiles(files ...string) error {
 	for _, file := range files {
 		var f, err = os.OpenFile(file, os.O_RDONLY, 0)
 		if err != nil {
@@ -57,11 +68,7 @@ func (this *RawConfigParser) LoadFiles(files ...string) error {
 	return nil
 }
 
-func (this *RawConfigParser) load(r io.Reader) error {
-	if this.sections == nil {
-		this.sections = make(map[string]*Section)
-	}
-
+func (this *rawConfigParser) load(r io.Reader) error {
 	var reader = bufio.NewReader(r)
 	var line []byte
 	var err error
@@ -69,6 +76,7 @@ func (this *RawConfigParser) load(r io.Reader) error {
 	var currentSection *Section
 
 	var index = 0
+	var comments []string
 	for {
 		if line, _, err = reader.ReadLine(); err != nil {
 			if err == io.EOF {
@@ -85,13 +93,20 @@ func (this *RawConfigParser) load(r io.Reader) error {
 		var sLine = strings.TrimSpace(string(line))
 
 		// 如果是注释或者空行,则忽略
-		if sLine == "" || strings.HasPrefix(sLine, "#") || strings.HasPrefix(sLine, ";") {
+		if sLine == "" {
+			continue
+		}
+
+		if strings.HasPrefix(sLine, "#") || strings.HasPrefix(sLine, ";") {
+			comments = append(comments, strings.TrimSpace(sLine[1:]))
 			continue
 		}
 
 		var sectionName = getSectionName(sLine)
 		if len(sectionName) > 0 && strings.ToLower(sectionName) != k_DEFAULT_SECTION {
 			currentSection = this.NewSection(sectionName)
+			currentSection.comments = append(currentSection.comments, comments...)
+			comments = nil
 			continue
 		}
 
@@ -105,16 +120,15 @@ func (this *RawConfigParser) load(r io.Reader) error {
 		optValue = strings.TrimSpace(optValue)
 
 		if optName != "" {
-			currentSection.NewOption(optName, optIV, optValue)
+			currentSection.NewOption(optName, optIV, optValue, comments)
+			comments = nil
 		}
 	}
-
 	return nil
 }
 
-// TODO 写入文件
-func (this *RawConfigParser) WriteToFile(file string) error {
-	var f, err = os.OpenFile(file, os.O_WRONLY | os.O_CREATE, os.ModePerm)
+func (this *rawConfigParser) WriteToFile(file string) error {
+	var f, err = os.OpenFile(file, os.O_WRONLY | os.O_CREATE | os.O_TRUNC, os.ModePerm)
 	if err != nil {
 		return err
 	}
@@ -122,15 +136,30 @@ func (this *RawConfigParser) WriteToFile(file string) error {
 	return this.writeTo(f)
 }
 
-func (this *RawConfigParser) writeTo(w io.Writer) error {
+func (this *rawConfigParser) writeTo(w io.Writer) error {
 	var writer = bufio.NewWriter(w)
 
 	for _, sectionName := range this.sectionKeys {
-		writer.WriteString(fmt.Sprintf("[%s]\n", sectionName))
 
 		var section = this.Section(sectionName)
+		for _, c := range section.Comments() {
+			if len(strings.TrimSpace(c)) > 0 {
+				writer.WriteString(fmt.Sprintf("# %s\n", c))
+			}
+		}
+
+		writer.WriteString(fmt.Sprintf("[%s]\n", sectionName))
+
 		for _, optionKey := range section.optionKeys {
 			var opt = section.Option(optionKey)
+			if len(opt.Comments()) > 0 {
+				writer.WriteString("\n")
+			}
+			for _, c := range opt.Comments() {
+				if len(strings.TrimSpace(c)) > 0 {
+					writer.WriteString(fmt.Sprintf("# %s\n", c))
+				}
+			}
 			for _, value := range opt.value {
 				writer.WriteString(fmt.Sprintf("%s %s %s\n", opt.key, opt.iv, value))
 			}
@@ -141,7 +170,7 @@ func (this *RawConfigParser) writeTo(w io.Writer) error {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-func (this *RawConfigParser) NewSection(name string) *Section {
+func (this *rawConfigParser) NewSection(name string) *Section {
 	this.Lock()
 	defer this.Unlock()
 
@@ -154,16 +183,18 @@ func (this *RawConfigParser) NewSection(name string) *Section {
 	return section
 }
 
-func (this *RawConfigParser) Section(name string) *Section {
+func (this *rawConfigParser) Section(name string) *Section {
+	this.RLock()
+	defer this.RUnlock()
 	var s, _ = this.sections[name]
 	return s
 }
 
-func (this *RawConfigParser) SectionNames() []string {
+func (this *rawConfigParser) SectionNames() []string {
 	return this.sectionKeys
 }
 
-func (this *RawConfigParser) SectionList() []*Section {
+func (this *rawConfigParser) SectionList() []*Section {
 	var sList = make([]*Section, 0, len(this.sections))
 	for _, value := range this.sections {
 		sList = append(sList, value)
@@ -171,18 +202,24 @@ func (this *RawConfigParser) SectionList() []*Section {
 	return sList
 }
 
-func (this *RawConfigParser) HasSection(section string) bool {
+func (this *rawConfigParser) HasSection(section string) bool {
 	var _, ok = this.sections[section]
 	return ok
 }
 
-func (this *RawConfigParser) RemoveSection(section string) {
+func (this *rawConfigParser) RemoveSection(section string) {
+	this.Lock()
+	defer this.Unlock()
+
+	if strings.ToLower(section) == k_DEFAULT_SECTION {
+		return
+	}
 	delete(this.sections, section)
 	container.Remove(&this.sectionKeys, section)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-func (this *RawConfigParser) Option(section, option string) *Option {
+func (this *rawConfigParser) Option(section, option string) *Option {
 	var s = this.Section(section)
 	if s != nil {
 		return s.Option(option)
@@ -190,7 +227,7 @@ func (this *RawConfigParser) Option(section, option string) *Option {
 	return nil
 }
 
-func (this *RawConfigParser) Options(section string) []string {
+func (this *rawConfigParser) Options(section string) []string {
 	var s = this.Section(section)
 	if s != nil {
 		return s.OptionKeys()
@@ -198,7 +235,7 @@ func (this *RawConfigParser) Options(section string) []string {
 	return nil
 }
 
-func (this *RawConfigParser) OptionList(section string) []*Option {
+func (this *rawConfigParser) OptionList(section string) []*Option {
 	var s = this.Section(section)
 	if s != nil {
 		return s.OptionList()
@@ -206,7 +243,7 @@ func (this *RawConfigParser) OptionList(section string) []*Option {
 	return nil
 }
 
-func (this *RawConfigParser) HasOption(section, option string) bool {
+func (this *rawConfigParser) HasOption(section, option string) bool {
 	if s, ok := this.sections[section]; ok {
 		if _, ok := s.options[option]; ok {
 			return true
@@ -215,7 +252,7 @@ func (this *RawConfigParser) HasOption(section, option string) bool {
 	return false
 }
 
-func (this *RawConfigParser) RemoveOption(section, option string) {
+func (this *rawConfigParser) RemoveOption(section, option string) {
 	this.Lock()
 	defer this.Unlock()
 
@@ -226,13 +263,16 @@ func (this *RawConfigParser) RemoveOption(section, option string) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-func (this *RawConfigParser) SetValue(section, option string, value string) {
+func (this *rawConfigParser) SetValue(section, option string, value string) {
 	var s = this.NewSection(section)
-	s.NewOption(option, "=", value)
+	s.NewOption(option, "=", value, nil)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-func (this *RawConfigParser) GetValue(section, option string) string {
+func (this *rawConfigParser) GetValue(section, option string) string {
+	this.RLock()
+	defer this.RUnlock()
+
 	var s = this.sections[section]
 	if s != nil {
 		var opt = s.options[option]
@@ -243,7 +283,10 @@ func (this *RawConfigParser) GetValue(section, option string) string {
 	return ""
 }
 
-func (this *RawConfigParser) GetListValue(section, option string) []string {
+func (this *rawConfigParser) GetListValue(section, option string) []string {
+	this.RLock()
+	defer this.RUnlock()
+
 	var s = this.sections[section]
 	if s != nil {
 		var opt = s.options[option]

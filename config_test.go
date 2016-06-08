@@ -2,7 +2,6 @@ package config
 
 import (
 	"testing"
-	"fmt"
 )
 
 //func TestSectionNameRegex(t *testing.T) {
@@ -31,24 +30,32 @@ import (
 //
 //	fmt.Println(r.GetListValue("default", "sk2"))
 //}
+//
+//func TestOutput(t *testing.T) {
+//	var r = &RawConfigParser{}
+//	r.LoadFiles("./PerfStringBackup.ini", "./test.conf")
+//
+//	//var sList = r.Sections()
+//
+//	fmt.Println(r.SectionNames())
+//	fmt.Println(r.Options("s2"))
+//
+//	fmt.Println(r.WriteToFile("./a.conf"))
+//}
 
-func TestOutput(t *testing.T) {
-	var r = &RawConfigParser{}
-	r.LoadFiles("./PerfStringBackup.ini", "./test.conf")
+func TestNew(t *testing.T) {
+	var r = NewConfig()
+	r.SetValue("s1", "k1", "v1")
+	r.SetValue("s1", "k2", "v2")
+	r.SetValue("s2", "k1", "v1")
 
-	//var sList = r.Sections()
+	r.WriteToFile("./a.ini")
 
-	fmt.Println(r.SectionNames())
-	fmt.Println(r.Options("s2"))
 
-	fmt.Println(r.WriteToFile("./a.conf"))
 
-	//for _, name := range sList {
-	//	var s = r.Section(name)
-	//	var oList = s.Options()
-	//	for _, oName := range oList {
-	//		var opt = s.Option(oName)
-	//		fmt.Println(opt.Name(), opt.Value())
-	//	}
-	//}
+//	r.LoadFiles("./a.ini")
+//
+//	fmt.Println(r.Section("s1").Comment())
+//	fmt.Println(r.Option("s1", "k2").Comment())
+
 }
