@@ -41,6 +41,8 @@ func TestOutput(t *testing.T) {
 	fmt.Println(r.SectionNames())
 	fmt.Println(r.Options("s2"))
 
+	fmt.Println(r.WriteToFile("./a.conf"))
+
 	//for _, name := range sList {
 	//	var s = r.Section(name)
 	//	var oList = s.Options()

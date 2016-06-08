@@ -19,39 +19,34 @@ func (this *Section) Name() string {
 	return this.name
 }
 
-func (this *Section) NewOption(name, iv, value string) {
-	var opt = this.options[name]
+func (this *Section) NewOption(key, iv, value string) {
+	var opt = this.options[key]
 	if opt == nil {
-		opt = NewOption(name, iv, value)
-		this.options[name] = opt
-		this.optionKeys = append(this.optionKeys, name)
+		opt = NewOption(key, iv, value)
+		this.options[key] = opt
+		this.optionKeys = append(this.optionKeys, key)
 	} else {
 		opt.value = append(opt.value, value)
 	}
 }
 
-func (this *Section) RemoveOption(name string) {
-	delete(this.options, name)
-	container.Remove(&this.optionKeys, name)
+func (this *Section) RemoveOption(key string) {
+	delete(this.options, key)
+	container.Remove(&this.optionKeys, key)
 }
 
-func (this *Section) HasOption(name string) bool {
-	var _, ok = this.options[name]
+func (this *Section) HasOption(key string) bool {
+	var _, ok = this.options[key]
 	return ok
 }
 
-func (this *Section) Option(name string) *Option {
-	var opt = this.options[name]
+func (this *Section) Option(key string) *Option {
+	var opt = this.options[key]
 	return opt
 }
 
 func (this *Section) OptionKeys() []string {
 	return this.optionKeys
-	//var oList = make([]string, 0, len(this.options))
-	//for key := range this.options {
-	//	oList = append(oList, key)
-	//}
-	//return oList
 }
 
 func (this *Section) OptionList() []*Option {

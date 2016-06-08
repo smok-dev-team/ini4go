@@ -9,6 +9,7 @@ import (
 	"sync"
 	"github.com/smartwalle/going/container"
 	"bytes"
+	"fmt"
 )
 
 const (
@@ -48,6 +49,7 @@ func (this *RawConfigParser) LoadFiles(files ...string) error {
 			return err
 		}
 		err = this.load(f)
+		f.Close()
 		if err != nil {
 			return err
 		}
@@ -112,7 +114,30 @@ func (this *RawConfigParser) load(r io.Reader) error {
 
 // TODO 写入文件
 func (this *RawConfigParser) WriteToFile(file string) error {
-	return nil
+	var f, err = os.OpenFile(file, os.O_WRONLY | os.O_CREATE, os.ModePerm)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	return this.writeTo(f)
+}
+
+func (this *RawConfigParser) writeTo(w io.Writer) error {
+	var writer = bufio.NewWriter(w)
+
+	for _, sectionName := range this.sectionKeys {
+		writer.WriteString(fmt.Sprintf("[%s]\n", sectionName))
+
+		var section = this.Section(sectionName)
+		for _, optionKey := range section.optionKeys {
+			var opt = section.Option(optionKey)
+			for _, value := range opt.value {
+				writer.WriteString(fmt.Sprintf("%s %s %s\n", opt.key, opt.iv, value))
+			}
+		}
+		writer.WriteByte('\n')
+	}
+	return writer.Flush()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
