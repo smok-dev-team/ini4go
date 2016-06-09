@@ -1,15 +1,15 @@
 package config
 
 import (
-	"regexp"
-	"io"
-	"strings"
 	"bufio"
-	"os"
-	"sync"
-	"github.com/smartwalle/going/container"
 	"bytes"
 	"fmt"
+	"github.com/smartwalle/going/container"
+	"io"
+	"os"
+	"regexp"
+	"strings"
+	"sync"
 )
 
 const (
@@ -18,6 +18,7 @@ const (
 
 ////////////////////////////////////////////////////////////////////////////////
 var sectionRegexp = regexp.MustCompile(`^\[(?P<header>[^]]+)\]$`)
+
 func getSectionName(src string) (name string) {
 	var rList = sectionRegexp.FindStringSubmatch(src)
 	if len(rList) >= 2 {
@@ -27,6 +28,7 @@ func getSectionName(src string) (name string) {
 }
 
 var optionRegexp = regexp.MustCompile(`(?P<key>[^:=\s][^:=]*)\s*(?:(?P<vi>[:=])\s*(?P<value>.*))?$`)
+
 func getOptionAndValue(src string) (option, vi, value string) {
 	var rList = optionRegexp.FindStringSubmatch(src)
 	if len(rList) >= 4 {
@@ -130,7 +132,7 @@ func (this *rawConfigParser) load(r io.Reader) error {
 }
 
 func (this *rawConfigParser) WriteToFile(file string) error {
-	var f, err = os.OpenFile(file, os.O_WRONLY | os.O_CREATE | os.O_TRUNC, os.ModePerm)
+	var f, err = os.OpenFile(file, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
 	if err != nil {
 		return err
 	}
@@ -173,6 +175,10 @@ func (this *rawConfigParser) writeTo(w io.Writer) error {
 
 ////////////////////////////////////////////////////////////////////////////////
 func (this *rawConfigParser) NewSection(name string) *Section {
+	return this.MustSection(name)
+}
+
+func (this *rawConfigParser) MustSection(name string) *Section {
 	this.Lock()
 	defer this.Unlock()
 
@@ -185,10 +191,6 @@ func (this *rawConfigParser) NewSection(name string) *Section {
 	return section
 }
 
-func (this *rawConfigParser) MustSection(name string) *Section {
-	return this.NewSection(name)
-}
-
 func (this *rawConfigParser) Section(name string) *Section {
 	this.RLock()
 	defer this.RUnlock()
@@ -197,7 +199,9 @@ func (this *rawConfigParser) Section(name string) *Section {
 }
 
 func (this *rawConfigParser) SectionNames() []string {
-	return this.sectionKeys
+	var names = make([]string, len(this.sectionKeys))
+	copy(names, this.sectionKeys)
+	return names
 }
 
 func (this *rawConfigParser) SectionList() []*Section {

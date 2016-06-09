@@ -75,7 +75,9 @@ func (this *Section) Option(key string) *Option {
 }
 
 func (this *Section) OptionKeys() []string {
-	return this.optionKeys
+	var keys = make([]string, len(this.optionKeys))
+	copy(keys, this.optionKeys)
+	return keys
 }
 
 func (this *Section) OptionList() []*Option {
