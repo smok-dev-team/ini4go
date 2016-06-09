@@ -169,7 +169,7 @@ func (this *rawConfigParser) writeTo(w io.Writer) error {
 					writer.WriteString(fmt.Sprintf("# %s\n", c))
 				}
 			}
-			for _, value := range opt.value {
+			for _, value := range opt.values {
 				writer.WriteString(fmt.Sprintf("%s %s %s\n", opt.key, opt.iv, value))
 			}
 		}
@@ -255,24 +255,31 @@ func (this *rawConfigParser) RemoveSection(section string) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-func (this *rawConfigParser) MustOption(section, option string) *Option {
-	this.Lock()
-	defer this.Unlock()
-
+func (this *rawConfigParser) mustOption(section, option string) *Option {
 	var s = this.mustSection(section)
 	var opt = s.MustOption(option)
 	return opt
 }
 
-func (this *rawConfigParser) Option(section, option string) *Option {
+func (this *rawConfigParser) MustOption(section, option string) *Option {
 	this.Lock()
 	defer this.Unlock()
 
+	return this.mustOption(section, option)
+}
+
+func (this *rawConfigParser) option(section, option string) *Option {
 	var s = this.section(section)
 	if s != nil {
 		return s.Option(option)
 	}
 	return nil
+}
+
+func (this *rawConfigParser) Option(section, option string) *Option {
+	this.Lock()
+	defer this.Unlock()
+	return this.option(section, option)
 }
 
 func (this *rawConfigParser) Options(section string) []string {
@@ -361,18 +368,51 @@ func (this *rawConfigParser) GetValue(section, option string) string {
 func (this *rawConfigParser) MustValue(section, option, defaultValue string) string {
 	this.RLock()
 	defer this.RUnlock()
-
-	var s = this.sections[section]
-	if s != nil {
-		var opt = s.options[option]
-		if opt != nil {
-			return opt.Value()
-		}
-	}
-	return defaultValue
+	var opt = this.mustOption(section, option)
+	return opt.MustString(defaultValue)
 }
 
-func (this *rawConfigParser) GetListValue(section, option string) []string {
+func (this *rawConfigParser) MustInt(section, option string, defaultValue int) int {
+	this.RLock()
+	defer this.RUnlock()
+
+	var opt = this.mustOption(section, option)
+	return opt.MustInt(defaultValue)
+}
+
+func (this *rawConfigParser) MustInt64(section, option string, defaultValue int64) int64 {
+	this.RLock()
+	defer this.RUnlock()
+
+	var opt = this.mustOption(section, option)
+	return opt.MustInt64(defaultValue)
+}
+
+func (this *rawConfigParser) MustFloat32(section, option string, defaultValue float32) float32 {
+	this.RLock()
+	defer this.RUnlock()
+
+	var opt = this.mustOption(section, option)
+	return opt.MustFloat32(defaultValue)
+}
+
+func (this *rawConfigParser) MustFloat64(section, option string, defaultValue float64) float64 {
+	this.RLock()
+	defer this.RUnlock()
+
+	var opt = this.mustOption(section, option)
+	return opt.MustFloat64(defaultValue)
+}
+
+func (this *rawConfigParser) MustBool(section, option string, defaultValue bool) bool {
+	this.RLock()
+	defer this.RUnlock()
+
+	var opt = this.mustOption(section, option)
+	return opt.MustBool(defaultValue)
+}
+
+func (this *rawConfigParser) GetValues(section, option string) []string {
 	this.RLock()
 	defer this.RUnlock()
 
@@ -380,7 +420,7 @@ func (this *rawConfigParser) GetListValue(section, option string) []string {
 	if s != nil {
 		var opt = s.options[option]
 		if opt != nil {
-			return opt.ListValue()
+			return opt.Values()
 		}
 	}
 	return nil

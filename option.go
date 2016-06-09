@@ -1,24 +1,25 @@
 package config
+
 import (
-	"strconv"
-	"fmt"
-	"strings"
 	"errors"
+	"fmt"
+	"strconv"
+	"strings"
 	"time"
 )
 
 type Option struct {
 	key      string
 	iv       string
-	value    []string
+	values   []string
 	comments []string
 }
 
-func NewOption(key, iv string, value []string) *Option {
+func NewOption(key, iv string, values []string) *Option {
 	var opt = &Option{}
 	opt.key = key
 	opt.iv = iv
-	opt.value = value
+	opt.values = values
 	return opt
 }
 
@@ -42,27 +43,34 @@ func (this *Option) AddComment(comment string) {
 }
 
 func (this *Option) Value() string {
-	if len(this.value[0]) > 0 {
-		return this.value[0]
+	if len(this.values) > 0 {
+		return this.values[0]
 	}
 	return ""
 }
 
 func (this *Option) SetValue(v string) {
-	this.value = []string{v}
+	this.values = []string{v}
 }
 
 func (this *Option) AppendValue(v ...string) {
-	this.value = append(this.value, v...)
+	this.values = append(this.values, v...)
 }
 
-func (this *Option) ListValue() []string {
-	return this.value
+func (this *Option) Values() []string {
+	return this.values
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 func (this *Option) String() string {
 	return this.Value()
+}
+
+func (this *Option) MustString(defaultValue string) string {
+	if len(this.String()) > 0 {
+		return this.String()
+	}
+	return defaultValue
 }
 
 func (this *Option) SetString(s string) {
@@ -170,7 +178,7 @@ func (this *Option) Time() (time.Time, error) {
 	return this.TimeWithLayout("2006-01-02 15:04:05.999999999 -0700 MST")
 }
 
-func (this *Option) MustTime(defaultValue time.Time) (time.Time) {
+func (this *Option) MustTime(defaultValue time.Time) time.Time {
 	var v, err = this.Time()
 	if err == nil {
 		return v

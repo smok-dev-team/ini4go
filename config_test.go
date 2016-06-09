@@ -33,10 +33,21 @@ func TestLoadFile(t *testing.T) {
 	var r = NewConfig()
 	r.LoadFiles("./test.conf")
 
-	fmt.Println(r.GetValue("default", "dk1"))
-	fmt.Println(r.GetValue("s1","sk1"))
-	fmt.Println(r.GetValue("不存在的section", "不存在的option"))
-	fmt.Println(r.MustValue("不存在的section", "不存在的option", "但是有默认值"))
+	if r.GetValue("default", "dk1") != "dkv1" {
+		t.Error("default -> dk1 应该为 dkv1")
+	}
+
+	if r.GetValue("s1", "sk1") != "skv1" {
+		t.Error("s1 -> sk1 应该为 skv1")
+	}
+
+	if r.GetValue("不存在的section", "不存在的option") != "" {
+		t.Error("不存在的section")
+	}
+
+	if r.MustValue("不存在的section", "不存在的option", "但是有默认值") != "但是有默认值" {
+		t.Error("不存在的section, 但是有默认值的哦")
+	}
 }
 
 func TestOutput(t *testing.T) {
@@ -57,7 +68,7 @@ func TestAppend(t *testing.T) {
 	r.MustOption("s3", "k1").AppendValue("第二个值", "第三个值", "第四个值")
 
 	fmt.Println(r.MustValue("s3", "k1", "oh no"))
-	fmt.Println(r.MustOption("s3", "k1").ListValue())
+	fmt.Println(r.MustOption("s3", "k1").Values())
 
 	r.MustOption("s4", "k1").SetBool(true)
 	r.MustOption("s4", "k2").SetInt(11)

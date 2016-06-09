@@ -44,7 +44,7 @@ func (this *Section) NewOption(key, iv string, value, comments []string) *Option
 	}
 
 	if value != nil {
-		opt.value = append(opt.value, value...)
+		opt.values = append(opt.values, value...)
 	}
 
 	if comments != nil {
