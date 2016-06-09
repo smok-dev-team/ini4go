@@ -56,6 +56,9 @@ func NewConfig() *Config {
 }
 
 func (this *rawConfigParser) LoadFiles(files ...string) error {
+	this.Lock()
+	defer this.Unlock()
+
 	for _, file := range files {
 		var f, err = os.OpenFile(file, os.O_RDONLY, 0)
 		if err != nil {
@@ -136,11 +139,15 @@ func (this *rawConfigParser) WriteToFile(file string) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
-	return this.writeTo(f)
+	err = this.writeTo(f)
+	f.Close()
+	return err
 }
 
 func (this *rawConfigParser) writeTo(w io.Writer) error {
+	this.Lock()
+	defer this.Unlock()
+
 	var writer = bufio.NewWriter(w)
 
 	for _, sectionName := range this.sectionKeys {
@@ -283,13 +290,38 @@ func (this *rawConfigParser) RemoveOption(section, option string) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-func (this *rawConfigParser) SetValue(section, option string, value string) {
+func (this *rawConfigParser) SetValue(section, option, value string) {
 	var s = this.NewSection(section)
 
 	this.Lock()
 	defer this.Unlock()
 
-	s.NewOption(option, "=", []string{value}, nil)
+	var opt = s.NewOption(option, "=", nil, nil)
+	opt.SetValue(value)
+}
+
+func (this *rawConfigParser) SetString(section, option, value string) {
+	this.SetValue(section, option, value)
+}
+
+func (this *rawConfigParser) SetInt(section, option string, value int) {
+	this.SetValue(section, option, fmt.Sprintf("%d", value))
+}
+
+func (this *rawConfigParser) SetInt64(section, option string, value int64) {
+	this.SetValue(section, option, fmt.Sprintf("%d", value))
+}
+
+func (this *rawConfigParser) SetFloat32(section, option string, value float32) {
+	this.SetValue(section, option, fmt.Sprintf("%f", value))
+}
+
+func (this *rawConfigParser) SetFloat64(section, option string, value float64) {
+	this.SetValue(section, option, fmt.Sprintf("%f", value))
+}
+
+func (this *rawConfigParser) SetBool(section, option string, value bool) {
+	this.SetValue(section, option, fmt.Sprintf("%t", value))
 }
 
 ////////////////////////////////////////////////////////////////////////////////
