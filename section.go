@@ -1,6 +1,6 @@
 package config
 
-import "github.com/smartwalle/going/container"
+import "github.com/smartwalle/going/tool"
 
 type Section struct {
 	name       string
@@ -55,7 +55,7 @@ func (this *Section) NewOption(key, iv string, value, comments []string) *Option
 
 func (this *Section) RemoveOption(key string) {
 	delete(this.options, key)
-	container.Remove(&this.optionKeys, key)
+	tool.Remove(&this.optionKeys, key)
 }
 
 func (this *Section) HasOption(key string) bool {

@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/smartwalle/going/container"
+	"github.com/smartwalle/going/tool"
 	"io"
 	"os"
 	"regexp"
@@ -56,9 +56,6 @@ func NewConfig() *Config {
 }
 
 func (this *rawConfigParser) LoadFiles(files ...string) error {
-	this.Lock()
-	defer this.Unlock()
-
 	for _, file := range files {
 		var f, err = os.OpenFile(file, os.O_RDONLY, 0)
 		if err != nil {
@@ -145,9 +142,6 @@ func (this *rawConfigParser) WriteToFile(file string) error {
 }
 
 func (this *rawConfigParser) writeTo(w io.Writer) error {
-	this.Lock()
-	defer this.Unlock()
-
 	var writer = bufio.NewWriter(w)
 
 	for _, sectionName := range this.sectionKeys {
@@ -232,7 +226,7 @@ func (this *rawConfigParser) RemoveSection(section string) {
 		return
 	}
 	delete(this.sections, section)
-	container.Remove(&this.sectionKeys, section)
+	tool.Remove(&this.sectionKeys, section)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
