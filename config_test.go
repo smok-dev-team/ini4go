@@ -22,39 +22,58 @@ func TestSectionNameRegex(t *testing.T) {
 func TestOptionIsExist(t *testing.T) {
 	var r = NewConfig()
 	r.LoadFiles("./test.conf")
-	fmt.Println(r.HasOption("default", "sk2"))
+
+	if r.HasOption("s1", "sk2") == false {
+		t.Error("s1 中有 sk2")
+	}
 }
 
 func TestLoadFile(t *testing.T) {
 	var r = NewConfig()
 	r.LoadFiles("./test.conf")
 
-	fmt.Println(r.GetValue("default", "sk2"))
-	fmt.Println(r.GetValue("s2","sk22"))
+	fmt.Println(r.GetValue("default", "dk1"))
+	fmt.Println(r.GetValue("s1","sk1"))
+	fmt.Println(r.GetValue("不存在的section", "不存在的option"))
+	fmt.Println(r.MustValue("不存在的section", "不存在的option", "但是有默认值"))
 }
 
 func TestOutput(t *testing.T) {
 	var r = NewConfig()
-	r.LoadFiles("./PerfStringBackup.ini", "./test.conf")
-
-
-	fmt.Println(r.SectionNames())
-	fmt.Println(r.Options("s2"))
-
-	fmt.Println(r.WriteToFile("./a.conf"))
+	r.SetValue("s1", "p1", "v1")
+	r.MustSection("s1").MustOption("p2").SetValue("v2")
+	r.MustSection("s2").MustOption("p2").SetValue("v2")
+	fmt.Println(r.WriteToFile("./output.conf"))
 }
 
-func TestNew(t *testing.T) {
+func TestAppend(t *testing.T) {
 	var r = NewConfig()
 	r.SetValue("s1", "k1", "v1")
 	r.SetValue("s1", "k2", "v2")
 	r.SetValue("s2", "k1", "v1")
 
-	r.MustOption("s3", "kk").AppendValue("adfsfdfsdfsdf")
+	r.MustOption("s3", "k1").AppendValue("第一个值")
+	r.MustOption("s3", "k1").AppendValue("第二个值", "第三个值", "第四个值")
 
-	r.MustOption("s3", "kk").AppendValue("sdfsf", "Ser", "xc")
+	fmt.Println(r.MustValue("s3", "k1", "oh no"))
+	fmt.Println(r.MustOption("s3", "k1").ListValue())
 
-	fmt.Println(r.MustValue("s3", "kk", "dsdf"))
+	r.WriteToFile("./output2.conf")
+}
 
-	r.WriteToFile("./a.ini")
+func TestLoad(t *testing.T) {
+	var r = NewConfig()
+	r.LoadFiles("./PerfStringBackup.ini")
+
+	var sectionNames = r.SectionNames()
+	for _, name := range sectionNames {
+		fmt.Println(name)
+		var section = r.Section(name)
+		var optKeys = section.OptionKeys()
+		for _, key := range optKeys {
+			var opt = section.Option(key)
+			fmt.Println("   ", opt.Key(), " = ", opt.Value())
+//			time.Sleep(time.Second * 1)
+		}
+	}
 }
