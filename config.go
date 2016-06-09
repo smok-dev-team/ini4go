@@ -38,21 +38,38 @@ func getOptionAndValue(src string) (option, vi, value string) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-type rawConfigParser struct {
-	sync.RWMutex
-	sectionKeys []string
-	sections    map[string]*Section
-}
-
-////////////////////////////////////////////////////////////////////////////////
 type Config struct {
 	rawConfigParser
 }
 
 func NewConfig() *Config {
 	var c = &Config{}
+	c.mutex = &sync.RWMutex{}
 	c.rawConfigParser.sections = make(map[string]*Section)
 	return c
+}
+
+////////////////////////////////////////////////////////////////////////////////
+type rawConfigParser struct {
+	mutex       *sync.RWMutex
+	sectionKeys []string
+	sections    map[string]*Section
+}
+
+func (this *rawConfigParser) Lock() {
+	this.mutex.Lock()
+}
+
+func (this *rawConfigParser) Unlock() {
+	this.mutex.Unlock()
+}
+
+func (this *rawConfigParser) RLock() {
+	this.mutex.RLock()
+}
+
+func (this *rawConfigParser) RUnlock() {
+	this.mutex.RUnlock()
 }
 
 func (this *rawConfigParser) LoadFiles(files ...string) error {
