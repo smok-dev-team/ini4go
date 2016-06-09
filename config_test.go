@@ -3,6 +3,7 @@ package config
 import (
 	"testing"
 	"fmt"
+	"time"
 )
 
 func TestSectionNameRegex(t *testing.T) {
@@ -58,22 +59,31 @@ func TestAppend(t *testing.T) {
 	fmt.Println(r.MustValue("s3", "k1", "oh no"))
 	fmt.Println(r.MustOption("s3", "k1").ListValue())
 
+	r.MustOption("s4", "k1").SetBool(true)
+	r.MustOption("s4", "k2").SetInt(11)
+	r.MustOption("s4", "k3").SetInt64(61)
+	r.MustOption("s4", "k4").SetFloat32(111.111)
+	r.MustOption("s4", "k5").SetTime(time.Now())
+	r.MustOption("s4", "k6").SetTimeWithLayout(time.Now(), "2006-01-02 15:04:05")
+
+
+	fmt.Println(r.MustOption("s4", "k6").TimeWithLayout("2006-01-02 15:04:05"))
+
 	r.WriteToFile("./output2.conf")
 }
 
-func TestLoad(t *testing.T) {
-	var r = NewConfig()
-	r.LoadFiles("./PerfStringBackup.ini")
-
-	var sectionNames = r.SectionNames()
-	for _, name := range sectionNames {
-		fmt.Println(name)
-		var section = r.Section(name)
-		var optKeys = section.OptionKeys()
-		for _, key := range optKeys {
-			var opt = section.Option(key)
-			fmt.Println("   ", opt.Key(), " = ", opt.Value())
-//			time.Sleep(time.Second * 1)
-		}
-	}
-}
+//func TestLoad(t *testing.T) {
+//	var r = NewConfig()
+//	r.LoadFiles("./PerfStringBackup.ini")
+//
+//	var sectionNames = r.SectionNames()
+//	for _, name := range sectionNames {
+//		fmt.Println(name)
+//		var section = r.Section(name)
+//		var optKeys = section.OptionKeys()
+//		for _, key := range optKeys {
+//			var opt = section.Option(key)
+//			fmt.Println("   ", opt.Key(), " = ", opt.Value())
+//		}
+//	}
+//}
