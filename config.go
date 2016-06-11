@@ -7,6 +7,7 @@ import (
 	"github.com/smartwalle/going/tool"
 	"io"
 	"os"
+	"path"
 	"regexp"
 	"strings"
 	"sync"
@@ -70,6 +71,47 @@ func (this *rawConfigParser) RLock() {
 
 func (this *rawConfigParser) RUnlock() {
 	this.mutex.RUnlock()
+}
+
+func (this *rawConfigParser) Load(dir string) error {
+	var fileInfo, err = os.Stat(dir)
+	if err != nil {
+		return err
+	}
+
+	var pathList []string
+
+	if fileInfo.IsDir() {
+		var file *os.File
+		file, err = os.Open(dir)
+		if err != nil {
+			return err
+		}
+
+		var names []string
+		names, err = file.Readdirnames(-1)
+
+		file.Close()
+		if err != nil {
+			return err
+		}
+
+		for _, name := range names {
+			var filePath = path.Join(dir, name)
+			fileInfo, err = os.Stat(filePath)
+			if err != nil {
+				continue
+			}
+
+			if !fileInfo.IsDir() {
+				pathList = append(pathList, filePath)
+			}
+		}
+	} else {
+		pathList = append(pathList, dir)
+	}
+
+	return this.LoadFiles(pathList...)
 }
 
 func (this *rawConfigParser) LoadFiles(files ...string) error {
