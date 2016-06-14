@@ -35,21 +35,26 @@ func (this *Section) AddComment(comment string) {
 	this.comments = append(this.comments, comment)
 }
 
+func (this *Section) newOption(key, iv string) *Option {
+	var opt = this.options[key]
+	if opt == nil {
+		opt = NewOption(this, key, iv, nil)
+		this.options[key] = opt
+		this.optionKeys = append(this.optionKeys, key)
+	}
+	return opt
+}
+
 func (this *Section) NewOption(key, iv string, value, comments []string) *Option {
 	var opt = this.options[key]
 	if opt == nil {
-		opt = NewOption(key, iv, nil)
+		opt = NewOption(this, key, iv, nil)
 		this.options[key] = opt
 		this.optionKeys = append(this.optionKeys, key)
 	}
 
-	if value != nil {
-		opt.values = append(opt.values, value...)
-	}
-
-	if comments != nil {
-		opt.comments = append(opt.comments, comments...)
-	}
+	opt.AddValue(value...)
+	opt.AddComment(comments...)
 	return opt
 }
 
@@ -64,7 +69,7 @@ func (this *Section) HasOption(key string) bool {
 }
 
 func (this *Section) MustOption(key string) *Option {
-	var opt = this.NewOption(key, "=", nil, nil)
+	var opt = this.newOption(key, "=")
 	return opt
 }
 

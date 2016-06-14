@@ -9,17 +9,19 @@ import (
 )
 
 type Option struct {
+	section  *Section
 	key      string
 	iv       string
 	values   []string
 	comments []string
 }
 
-func NewOption(key, iv string, values []string) *Option {
+func NewOption(section *Section, key, iv string, values []string) *Option {
 	var opt = &Option{}
 	opt.key = key
 	opt.iv = iv
 	opt.values = values
+	opt.section = section
 	return opt
 }
 
@@ -38,8 +40,10 @@ func (this *Option) Comment() string {
 	return ""
 }
 
-func (this *Option) AddComment(comment string) {
-	this.comments = append(this.comments, comment)
+func (this *Option) AddComment(comment ...string) {
+	if len(comment) > 0 {
+		this.comments = append(this.comments, comment...)
+	}
 }
 
 func (this *Option) Value() string {
@@ -61,8 +65,10 @@ func (this *Option) SetValue(v string) {
 	this.values = []string{v}
 }
 
-func (this *Option) AppendValue(v ...string) {
-	this.values = append(this.values, v...)
+func (this *Option) AddValue(v ...string) {
+	if len(v) > 0 {
+		this.values = append(this.values, v...)
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////

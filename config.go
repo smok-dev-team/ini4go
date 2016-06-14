@@ -189,7 +189,9 @@ func (this *rawConfigParser) load(r io.Reader) error {
 		optValue = strings.TrimSpace(optValue)
 
 		if optName != "" {
-			currentSection.NewOption(optName, optIV, []string{optValue}, comments)
+			var opt = currentSection.newOption(optName, optIV)
+			opt.AddValue(optValue)
+			opt.AddComment(comments...)
 			comments = nil
 		}
 	}
@@ -402,7 +404,7 @@ func (this *rawConfigParser) SetValue(section, option, value string) {
 	defer this.Unlock()
 
 	var s = this.newSection(section)
-	var opt = s.NewOption(option, "=", nil, nil)
+	var opt = s.newOption(option, "=")
 	opt.SetValue(value)
 }
 

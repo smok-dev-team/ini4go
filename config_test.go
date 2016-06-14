@@ -64,8 +64,8 @@ func TestAppend(t *testing.T) {
 	r.SetValue("s1", "k2", "v2")
 	r.SetValue("s2", "k1", "v1")
 
-	r.MustOption("s3", "k1").AppendValue("第一个值")
-	r.MustOption("s3", "k1").AppendValue("第二个值", "第三个值", "第四个值")
+	r.MustOption("s3", "k1").AddValue("第一个值")
+	r.MustOption("s3", "k1").AddValue("第二个值", "第三个值", "第四个值")
 
 	fmt.Println(r.MustValue("s3", "k1", "oh no"))
 	fmt.Println(r.MustOption("s3", "k1").Values())
