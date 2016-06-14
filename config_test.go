@@ -48,6 +48,9 @@ func TestLoadFile(t *testing.T) {
 	if r.MustValue("不存在的section", "不存在的option", "但是有默认值") != "但是有默认值" {
 		t.Error("不存在的section, 但是有默认值的哦")
 	}
+
+	fmt.Println(r.GetValue("s1", "sk4"))
+	fmt.Println(r.GetValues("s1", "sk4"))
 }
 
 func TestOutput(t *testing.T) {

@@ -6,8 +6,18 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"regexp"
 )
 
+////////////////////////////////////////////////////////////////////////////////
+var varRegexp = regexp.MustCompile(`%\((\S[^\(\)]+)\)s`)
+
+func getVarName(src string) [][]string {
+	var rList = varRegexp.FindAllStringSubmatch(src, -1)
+	return rList
+}
+
+////////////////////////////////////////////////////////////////////////////////
 type Option struct {
 	section  *Section
 	key      string
@@ -46,19 +56,45 @@ func (this *Option) AddComment(comment ...string) {
 	}
 }
 
+func (this *Option) parseValue(raw string) (result string) {
+	//var varNameList = getVarName(raw)
+	//result = raw
+	//for _, l := range varNameList {
+	//	var keyVar = l[0]
+	//	var keyName = l[1]
+	//	var value = this.section.MustOption(keyName).Value()
+	//	result = strings.Replace(raw, keyVar, value, -1)
+	//}
+	//return result
+
+	result = varRegexp.ReplaceAllStringFunc(raw, func (src string) string {
+		var key = src[2:len(src)-2]
+		var value = this.section.MustOption(key).Value()
+		return value
+	})
+	return result
+}
+
 func (this *Option) Value() string {
 	return this.ValueAt(0)
 }
 
 func (this *Option) ValueAt(index int) string {
 	if len(this.values) > index {
-		return this.values[index]
+		return this.parseValue(this.values[index])
 	}
 	return ""
 }
 
 func (this *Option) Values() []string {
-	return this.values
+	var l = len(this.values)
+	var newValues = make([]string, l)
+
+	for i:=0; i<l; i++ {
+		newValues[i] = this.ValueAt(i)
+	}
+
+	return newValues
 }
 
 func (this *Option) SetValue(v string) {
