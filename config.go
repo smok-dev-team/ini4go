@@ -46,7 +46,7 @@ type Config struct {
 func NewConfig() *Config {
 	var c = &Config{}
 	c.mutex = &sync.RWMutex{}
-	c.rawConfigParser.sections = make(map[string]*Section)
+	c.init()
 	return c
 }
 
@@ -71,6 +71,11 @@ func (this *rawConfigParser) RLock() {
 
 func (this *rawConfigParser) RUnlock() {
 	this.mutex.RUnlock()
+}
+
+func (this *rawConfigParser) init() {
+	this.sectionKeys = nil
+	this.sections = make(map[string]*Section)
 }
 
 func (this *rawConfigParser) Load(dir string) error {
@@ -238,6 +243,12 @@ func (this *rawConfigParser) writeTo(w io.Writer) error {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+func (this *rawConfigParser) Reset() {
+	this.Lock()
+	this.Unlock()
+	this.init()
+}
+
 func (this *rawConfigParser) newSection(name string) *Section {
 	var section = this.sections[name]
 	if section == nil {
