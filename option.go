@@ -43,10 +43,18 @@ func (this *Option) AddComment(comment string) {
 }
 
 func (this *Option) Value() string {
-	if len(this.values) > 0 {
-		return this.values[0]
+	return this.ValueAt(0)
+}
+
+func (this *Option) ValueAt(index int) string {
+	if len(this.values) > index {
+		return this.values[index]
 	}
 	return ""
+}
+
+func (this *Option) Values() []string {
+	return this.values
 }
 
 func (this *Option) SetValue(v string) {
@@ -55,10 +63,6 @@ func (this *Option) SetValue(v string) {
 
 func (this *Option) AppendValue(v ...string) {
 	this.values = append(this.values, v...)
-}
-
-func (this *Option) Values() []string {
-	return this.values
 }
 
 ////////////////////////////////////////////////////////////////////////////////
