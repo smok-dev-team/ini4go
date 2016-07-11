@@ -44,7 +44,13 @@ type Config struct {
 }
 
 func NewConfig() *Config {
+	return NewConfigWithBlock(true, true)
+}
+
+func NewConfigWithBlock(readBlock, writeBlock bool) *Config {
 	var c = &Config{}
+	c.readBlock = readBlock
+	c.writeBlock = writeBlock
 	c.mutex = &sync.RWMutex{}
 	c.init()
 	return c
@@ -55,22 +61,33 @@ type rawConfigParser struct {
 	mutex       *sync.RWMutex
 	sectionKeys []string
 	sections    map[string]*Section
+
+	writeBlock  bool
+	readBlock   bool
 }
 
 func (this *rawConfigParser) Lock() {
-	this.mutex.Lock()
+	if this.writeBlock {
+		this.mutex.Lock()
+	}
 }
 
 func (this *rawConfigParser) Unlock() {
-	this.mutex.Unlock()
+	if this.writeBlock {
+		this.mutex.Unlock()
+	}
 }
 
 func (this *rawConfigParser) RLock() {
-	this.mutex.RLock()
+	if this.readBlock {
+		this.mutex.RLock()
+	}
 }
 
 func (this *rawConfigParser) RUnlock() {
-	this.mutex.RUnlock()
+	if this.readBlock {
+		this.mutex.RUnlock()
+	}
 }
 
 func (this *rawConfigParser) init() {
@@ -496,17 +513,4 @@ func (this *rawConfigParser) GetValues(section, option string) []string {
 		}
 	}
 	return nil
-}
-
-////////////////////////////////////////////////////////////////////////////////
-func (this *rawConfigParser) ReadValue(section, option string) string {
-	var s = this.section(section)
-	if s == nil {
-		return ""
-	}
-	var o = s.Option(option)
-	if o == nil {
-		return ""
-	}
-	return o.MustString("")
 }
