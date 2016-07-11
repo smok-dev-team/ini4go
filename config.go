@@ -434,7 +434,17 @@ func (this *rawConfigParser) SetBool(section, option string, value bool) {
 
 ////////////////////////////////////////////////////////////////////////////////
 func (this *rawConfigParser) GetValue(section, option string) string {
-	return this.MustValue(section, option, "")
+	//return this.MustValue(section, option, "")
+
+	var s = this.section(section)
+	if s == nil {
+		return ""
+	}
+	var o = s.Option(option)
+	if o == nil {
+		return ""
+	}
+	return o.MustString("")
 }
 
 func (this *rawConfigParser) MustValue(section, option, defaultValue string) string {
