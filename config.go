@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/smartwalle/going/tool"
+	"github.com/smartwalle/container"
 	"io"
 	"os"
 	"path"
@@ -340,7 +340,7 @@ func (this *rawConfigParser) RemoveSection(section string) {
 		return
 	}
 	delete(this.sections, section)
-	tool.Remove(&this.sectionKeys, section)
+	container.Remove(&this.sectionKeys, section)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
