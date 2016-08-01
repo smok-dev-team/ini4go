@@ -43,14 +43,13 @@ type Config struct {
 	rawConfigParser
 }
 
-func NewConfig() *Config {
-	return NewConfigWithBlock(true, true)
-}
+//func New() *Config {
+//	return NewConfigWithBlock(true, true)
+//}
 
-func NewConfigWithBlock(readBlock, writeBlock bool) *Config {
+func New(block bool) *Config {
 	var c = &Config{}
-	c.readBlock = readBlock
-	c.writeBlock = writeBlock
+	c.block = block
 	c.mutex = &sync.RWMutex{}
 	c.init()
 	return c
@@ -61,31 +60,29 @@ type rawConfigParser struct {
 	mutex       *sync.RWMutex
 	sectionKeys []string
 	sections    map[string]*Section
-
-	writeBlock  bool
-	readBlock   bool
+	block       bool
 }
 
 func (this *rawConfigParser) Lock() {
-	if this.writeBlock {
+	if this.block {
 		this.mutex.Lock()
 	}
 }
 
 func (this *rawConfigParser) Unlock() {
-	if this.writeBlock {
+	if this.block {
 		this.mutex.Unlock()
 	}
 }
 
 func (this *rawConfigParser) RLock() {
-	if this.readBlock {
+	if this.block {
 		this.mutex.RLock()
 	}
 }
 
 func (this *rawConfigParser) RUnlock() {
-	if this.readBlock {
+	if this.block {
 		this.mutex.RUnlock()
 	}
 }

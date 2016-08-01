@@ -21,7 +21,7 @@ func TestSectionNameRegex(t *testing.T) {
 }
 
 func TestOptionIsExist(t *testing.T) {
-	var r = NewConfig()
+	var r = New(false)
 	r.LoadFiles("./test.conf")
 
 	if r.HasOption("s1", "sk2") == false {
@@ -30,7 +30,7 @@ func TestOptionIsExist(t *testing.T) {
 }
 
 func TestLoadFile(t *testing.T) {
-	var r = NewConfig()
+	var r = New(false)
 	r.LoadFiles("./test.conf")
 
 	if r.GetValue("default", "dk1") != "dkv1" {
@@ -54,7 +54,7 @@ func TestLoadFile(t *testing.T) {
 }
 
 func TestOutput(t *testing.T) {
-	var r = NewConfig()
+	var r = New(false)
 	r.SetValue("s1", "p1", "v1")
 	r.MustSection("s1").MustOption("p2").SetValue("v2")
 	r.MustSection("s2").MustOption("p2").SetValue("v2")
@@ -62,7 +62,7 @@ func TestOutput(t *testing.T) {
 }
 
 func TestAppend(t *testing.T) {
-	var r = NewConfig()
+	var r = New(false)
 	r.SetValue("s1", "k1", "v1")
 	r.SetValue("s1", "k2", "v2")
 	r.SetValue("s2", "k1", "v1")
