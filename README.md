@@ -11,7 +11,7 @@ ini 配置文件读取、写入组件。
 ##### 读取文件
 
 ```
-var r = NewConfig()
+var r = New(false)
 r.LoadFiles("./test.conf")
 fmt.Println(r.GetValue("s1", "sk1"))
 ```
@@ -19,7 +19,7 @@ fmt.Println(r.GetValue("s1", "sk1"))
 ##### 写入文件
 
 ```
-var r = NewConfig()
+var r = New(false)
 r.SetValue("s1", "p1", "v1")
 r.MustSection("s1").MustOption("p2").SetValue("v2")
 r.MustSection("s2").MustOption("p2").SetValue("v2")
