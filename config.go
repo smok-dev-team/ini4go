@@ -1,4 +1,4 @@
-package config
+package ini4go
 
 import (
 	"bufio"
@@ -39,16 +39,16 @@ func getOptionAndValue(src string) (option, vi, value string) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-type Config struct {
-	rawConfigParser
+type Ini struct {
+	iniParser
 }
 
 //func New() *Config {
 //	return NewConfigWithBlock(true, true)
 //}
 
-func New(block bool) *Config {
-	var c = &Config{}
+func New(block bool) *Ini {
+	var c = &Ini{}
 	c.block = block
 	c.mutex = &sync.RWMutex{}
 	c.init()
@@ -56,43 +56,43 @@ func New(block bool) *Config {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-type rawConfigParser struct {
+type iniParser struct {
 	mutex       *sync.RWMutex
 	sectionKeys []string
 	sections    map[string]*Section
 	block       bool
 }
 
-func (this *rawConfigParser) Lock() {
+func (this *iniParser) Lock() {
 	if this.block {
 		this.mutex.Lock()
 	}
 }
 
-func (this *rawConfigParser) Unlock() {
+func (this *iniParser) Unlock() {
 	if this.block {
 		this.mutex.Unlock()
 	}
 }
 
-func (this *rawConfigParser) RLock() {
+func (this *iniParser) RLock() {
 	if this.block {
 		this.mutex.RLock()
 	}
 }
 
-func (this *rawConfigParser) RUnlock() {
+func (this *iniParser) RUnlock() {
 	if this.block {
 		this.mutex.RUnlock()
 	}
 }
 
-func (this *rawConfigParser) init() {
+func (this *iniParser) init() {
 	this.sectionKeys = nil
 	this.sections = make(map[string]*Section)
 }
 
-func (this *rawConfigParser) Load(dir string) error {
+func (this *iniParser) Load(dir string) error {
 	var fileInfo, err = os.Stat(dir)
 	if err != nil {
 		return err
@@ -133,7 +133,7 @@ func (this *rawConfigParser) Load(dir string) error {
 	return this.LoadFiles(pathList...)
 }
 
-func (this *rawConfigParser) LoadFiles(files ...string) error {
+func (this *iniParser) LoadFiles(files ...string) error {
 	this.Lock()
 	defer this.Unlock()
 
@@ -151,7 +151,7 @@ func (this *rawConfigParser) LoadFiles(files ...string) error {
 	return nil
 }
 
-func (this *rawConfigParser) load(r io.Reader) error {
+func (this *iniParser) load(r io.Reader) error {
 	var reader = bufio.NewReader(r)
 	var line []byte
 	var err error
@@ -212,7 +212,7 @@ func (this *rawConfigParser) load(r io.Reader) error {
 	return nil
 }
 
-func (this *rawConfigParser) WriteToFile(file string) error {
+func (this *iniParser) WriteToFile(file string) error {
 	var f, err = os.OpenFile(file, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
 	if err != nil {
 		return err
@@ -222,7 +222,7 @@ func (this *rawConfigParser) WriteToFile(file string) error {
 	return err
 }
 
-func (this *rawConfigParser) writeTo(w io.Writer) error {
+func (this *iniParser) writeTo(w io.Writer) error {
 	this.Lock()
 	defer this.Unlock()
 
@@ -259,13 +259,13 @@ func (this *rawConfigParser) writeTo(w io.Writer) error {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-func (this *rawConfigParser) Reset() {
+func (this *iniParser) Reset() {
 	this.Lock()
 	this.Unlock()
 	this.init()
 }
 
-func (this *rawConfigParser) newSection(name string) *Section {
+func (this *iniParser) newSection(name string) *Section {
 	var section = this.sections[name]
 	if section == nil {
 		section = NewSection(name)
@@ -275,33 +275,33 @@ func (this *rawConfigParser) newSection(name string) *Section {
 	return section
 }
 
-func (this *rawConfigParser) NewSection(name string) *Section {
+func (this *iniParser) NewSection(name string) *Section {
 	this.Lock()
 	defer this.Unlock()
 
 	return this.newSection(name)
 }
 
-func (this *rawConfigParser) mustSection(name string) *Section {
+func (this *iniParser) mustSection(name string) *Section {
 	return this.newSection(name)
 }
 
-func (this *rawConfigParser) MustSection(name string) *Section {
+func (this *iniParser) MustSection(name string) *Section {
 	return this.NewSection(name)
 }
 
-func (this *rawConfigParser) section(name string) *Section {
+func (this *iniParser) section(name string) *Section {
 	var s, _ = this.sections[name]
 	return s
 }
 
-func (this *rawConfigParser) Section(name string) *Section {
+func (this *iniParser) Section(name string) *Section {
 	this.RLock()
 	defer this.RUnlock()
 	return this.section(name)
 }
 
-func (this *rawConfigParser) SectionNames() []string {
+func (this *iniParser) SectionNames() []string {
 	this.RLock()
 	defer this.RUnlock()
 
@@ -310,7 +310,7 @@ func (this *rawConfigParser) SectionNames() []string {
 	return names
 }
 
-func (this *rawConfigParser) SectionList() []*Section {
+func (this *iniParser) SectionList() []*Section {
 	this.RLock()
 	defer this.RUnlock()
 
@@ -321,7 +321,7 @@ func (this *rawConfigParser) SectionList() []*Section {
 	return sList
 }
 
-func (this *rawConfigParser) HasSection(section string) bool {
+func (this *iniParser) HasSection(section string) bool {
 	this.RLock()
 	defer this.RUnlock()
 
@@ -329,7 +329,7 @@ func (this *rawConfigParser) HasSection(section string) bool {
 	return ok
 }
 
-func (this *rawConfigParser) RemoveSection(section string) {
+func (this *iniParser) RemoveSection(section string) {
 	this.Lock()
 	defer this.Unlock()
 
@@ -341,20 +341,20 @@ func (this *rawConfigParser) RemoveSection(section string) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-func (this *rawConfigParser) mustOption(section, option string) *Option {
+func (this *iniParser) mustOption(section, option string) *Option {
 	var s = this.mustSection(section)
 	var opt = s.MustOption(option)
 	return opt
 }
 
-func (this *rawConfigParser) MustOption(section, option string) *Option {
+func (this *iniParser) MustOption(section, option string) *Option {
 	this.Lock()
 	defer this.Unlock()
 
 	return this.mustOption(section, option)
 }
 
-func (this *rawConfigParser) option(section, option string) *Option {
+func (this *iniParser) option(section, option string) *Option {
 	var s = this.section(section)
 	if s != nil {
 		return s.Option(option)
@@ -362,13 +362,13 @@ func (this *rawConfigParser) option(section, option string) *Option {
 	return nil
 }
 
-func (this *rawConfigParser) Option(section, option string) *Option {
+func (this *iniParser) Option(section, option string) *Option {
 	this.Lock()
 	defer this.Unlock()
 	return this.option(section, option)
 }
 
-func (this *rawConfigParser) Options(section string) []string {
+func (this *iniParser) Options(section string) []string {
 	this.RLock()
 	defer this.RUnlock()
 
@@ -379,7 +379,7 @@ func (this *rawConfigParser) Options(section string) []string {
 	return nil
 }
 
-func (this *rawConfigParser) OptionList(section string) []*Option {
+func (this *iniParser) OptionList(section string) []*Option {
 	this.RLock()
 	defer this.RUnlock()
 
@@ -390,7 +390,7 @@ func (this *rawConfigParser) OptionList(section string) []*Option {
 	return nil
 }
 
-func (this *rawConfigParser) HasOption(section, option string) bool {
+func (this *iniParser) HasOption(section, option string) bool {
 	this.RLock()
 	defer this.RUnlock()
 
@@ -402,7 +402,7 @@ func (this *rawConfigParser) HasOption(section, option string) bool {
 	return false
 }
 
-func (this *rawConfigParser) RemoveOption(section, option string) {
+func (this *iniParser) RemoveOption(section, option string) {
 	this.Lock()
 	defer this.Unlock()
 
@@ -413,7 +413,7 @@ func (this *rawConfigParser) RemoveOption(section, option string) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-func (this *rawConfigParser) SetValue(section, option, value string) {
+func (this *iniParser) SetValue(section, option, value string) {
 	this.Lock()
 	defer this.Unlock()
 
@@ -422,43 +422,43 @@ func (this *rawConfigParser) SetValue(section, option, value string) {
 	opt.SetValue(value)
 }
 
-func (this *rawConfigParser) SetString(section, option, value string) {
+func (this *iniParser) SetString(section, option, value string) {
 	this.SetValue(section, option, value)
 }
 
-func (this *rawConfigParser) SetInt(section, option string, value int) {
+func (this *iniParser) SetInt(section, option string, value int) {
 	this.SetValue(section, option, fmt.Sprintf("%d", value))
 }
 
-func (this *rawConfigParser) SetInt64(section, option string, value int64) {
+func (this *iniParser) SetInt64(section, option string, value int64) {
 	this.SetValue(section, option, fmt.Sprintf("%d", value))
 }
 
-func (this *rawConfigParser) SetFloat32(section, option string, value float32) {
+func (this *iniParser) SetFloat32(section, option string, value float32) {
 	this.SetValue(section, option, fmt.Sprintf("%f", value))
 }
 
-func (this *rawConfigParser) SetFloat64(section, option string, value float64) {
+func (this *iniParser) SetFloat64(section, option string, value float64) {
 	this.SetValue(section, option, fmt.Sprintf("%f", value))
 }
 
-func (this *rawConfigParser) SetBool(section, option string, value bool) {
+func (this *iniParser) SetBool(section, option string, value bool) {
 	this.SetValue(section, option, fmt.Sprintf("%t", value))
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-func (this *rawConfigParser) GetValue(section, option string) string {
+func (this *iniParser) GetValue(section, option string) string {
 	return this.MustValue(section, option, "")
 }
 
-func (this *rawConfigParser) MustValue(section, option, defaultValue string) string {
+func (this *iniParser) MustValue(section, option, defaultValue string) string {
 	this.RLock()
 	defer this.RUnlock()
 	var opt = this.mustOption(section, option)
 	return opt.MustString(defaultValue)
 }
 
-func (this *rawConfigParser) MustInt(section, option string, defaultValue int) int {
+func (this *iniParser) MustInt(section, option string, defaultValue int) int {
 	this.RLock()
 	defer this.RUnlock()
 
@@ -466,7 +466,7 @@ func (this *rawConfigParser) MustInt(section, option string, defaultValue int) i
 	return opt.MustInt(defaultValue)
 }
 
-func (this *rawConfigParser) MustInt64(section, option string, defaultValue int64) int64 {
+func (this *iniParser) MustInt64(section, option string, defaultValue int64) int64 {
 	this.RLock()
 	defer this.RUnlock()
 
@@ -474,7 +474,7 @@ func (this *rawConfigParser) MustInt64(section, option string, defaultValue int6
 	return opt.MustInt64(defaultValue)
 }
 
-func (this *rawConfigParser) MustFloat32(section, option string, defaultValue float32) float32 {
+func (this *iniParser) MustFloat32(section, option string, defaultValue float32) float32 {
 	this.RLock()
 	defer this.RUnlock()
 
@@ -482,7 +482,7 @@ func (this *rawConfigParser) MustFloat32(section, option string, defaultValue fl
 	return opt.MustFloat32(defaultValue)
 }
 
-func (this *rawConfigParser) MustFloat64(section, option string, defaultValue float64) float64 {
+func (this *iniParser) MustFloat64(section, option string, defaultValue float64) float64 {
 	this.RLock()
 	defer this.RUnlock()
 
@@ -490,7 +490,7 @@ func (this *rawConfigParser) MustFloat64(section, option string, defaultValue fl
 	return opt.MustFloat64(defaultValue)
 }
 
-func (this *rawConfigParser) MustBool(section, option string, defaultValue bool) bool {
+func (this *iniParser) MustBool(section, option string, defaultValue bool) bool {
 	this.RLock()
 	defer this.RUnlock()
 
@@ -498,7 +498,7 @@ func (this *rawConfigParser) MustBool(section, option string, defaultValue bool)
 	return opt.MustBool(defaultValue)
 }
 
-func (this *rawConfigParser) GetValues(section, option string) []string {
+func (this *iniParser) GetValues(section, option string) []string {
 	this.RLock()
 	defer this.RUnlock()
 

@@ -1,4 +1,4 @@
-## Config
+## ini4go
 ini 配置文件读取、写入组件。
 
 * Section - 支持分组;

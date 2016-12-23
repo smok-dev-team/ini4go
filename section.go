@@ -1,4 +1,4 @@
-package config
+package ini4go
 
 import (
 	"github.com/smartwalle/container"
