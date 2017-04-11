@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"errors"
 )
 
 const (
@@ -57,10 +58,11 @@ func New(block bool) *Ini {
 
 ////////////////////////////////////////////////////////////////////////////////
 type iniParser struct {
-	mutex       *sync.RWMutex
-	sectionKeys []string
-	sections    map[string]*Section
-	block       bool
+	mutex        *sync.RWMutex
+	sectionKeys  []string
+	sections     map[string]*Section
+	block        bool
+	uniqueOption bool
 }
 
 func (this *iniParser) Lock() {
@@ -85,6 +87,10 @@ func (this *iniParser) RUnlock() {
 	if this.block {
 		this.mutex.RUnlock()
 	}
+}
+
+func (this *iniParser) SetUniqueOption(unique bool) {
+	this.uniqueOption = unique
 }
 
 func (this *iniParser) init() {
@@ -203,6 +209,10 @@ func (this *iniParser) load(r io.Reader) error {
 		optValue = strings.TrimSpace(optValue)
 
 		if optName != "" {
+			if this.uniqueOption && currentSection.HasOption(optName) {
+				return errors.New("有重复的 Option: " + optName)
+			}
+
 			var opt = currentSection.newOption(optName, optIV)
 			opt.AddValue(optValue)
 			opt.AddComment(comments...)
