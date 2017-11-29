@@ -223,7 +223,7 @@ func (this *iniParser) load(r io.Reader) error {
 }
 
 func (this *iniParser) WriteToFile(file string) error {
-	var f, err = os.OpenFile(file, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
+	var f, err = os.OpenFile(file, os.O_RDWR|os.O_CREATE|os.O_SYNC, os.ModePerm)
 	if err != nil {
 		return err
 	}
