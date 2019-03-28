@@ -1,8 +1,8 @@
 package ini4go
 
 import (
-	"testing"
 	"fmt"
+	"testing"
 	"time"
 )
 
@@ -79,7 +79,6 @@ func TestAppend(t *testing.T) {
 	r.MustOption("s4", "k4").SetFloat32(111.111)
 	r.MustOption("s4", "k5").SetTime(time.Now())
 	r.MustOption("s4", "k6").SetTimeWithLayout(time.Now(), "2006-01-02 15:04:05")
-
 
 	fmt.Println(r.MustOption("s4", "k6").TimeWithLayout("2006-01-02 15:04:05"))
 

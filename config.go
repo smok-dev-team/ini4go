@@ -3,6 +3,7 @@ package ini4go
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"github.com/smartwalle/container"
 	"io"
@@ -11,7 +12,6 @@ import (
 	"regexp"
 	"strings"
 	"sync"
-	"errors"
 )
 
 const (

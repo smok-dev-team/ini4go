@@ -3,10 +3,10 @@ package ini4go
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
-	"regexp"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -67,8 +67,8 @@ func (this *Option) parseValue(raw string) (result string) {
 	//}
 	//return result
 
-	result = varRegexp.ReplaceAllStringFunc(raw, func (src string) string {
-		var key = src[2:len(src)-2]
+	result = varRegexp.ReplaceAllStringFunc(raw, func(src string) string {
+		var key = src[2 : len(src)-2]
 		var value = this.section.MustOption(key).Value()
 		return value
 	})
@@ -90,7 +90,7 @@ func (this *Option) Values() []string {
 	var l = len(this.values)
 	var newValues = make([]string, l)
 
-	for i:=0; i<l; i++ {
+	for i := 0; i < l; i++ {
 		newValues[i] = this.ValueAt(i)
 	}
 
