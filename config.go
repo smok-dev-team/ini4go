@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	k_DEFAULT_SECTION = "default"
+	kDefaultSection = "default"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -192,7 +192,7 @@ func (this *iniParser) load(r io.Reader) error {
 		}
 
 		var sectionName = getSectionName(sLine)
-		if len(sectionName) > 0 && strings.ToLower(sectionName) != k_DEFAULT_SECTION {
+		if len(sectionName) > 0 && strings.ToLower(sectionName) != kDefaultSection {
 			currentSection = this.newSection(sectionName)
 			currentSection.comments = append(currentSection.comments, comments...)
 			comments = nil
@@ -200,7 +200,7 @@ func (this *iniParser) load(r io.Reader) error {
 		}
 
 		if currentSection == nil {
-			currentSection = this.newSection(strings.ToLower(k_DEFAULT_SECTION))
+			currentSection = this.newSection(strings.ToLower(kDefaultSection))
 		}
 
 		var optName, optIV, optValue = getOptionAndValue(sLine)
@@ -343,7 +343,7 @@ func (this *iniParser) RemoveSection(section string) {
 	this.Lock()
 	defer this.Unlock()
 
-	if strings.ToLower(section) == k_DEFAULT_SECTION {
+	if strings.ToLower(section) == kDefaultSection {
 		return
 	}
 	delete(this.sections, section)
