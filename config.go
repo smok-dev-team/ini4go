@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/smartwalle/container"
 	"io"
 	"os"
 	"path"
@@ -347,7 +346,18 @@ func (this *iniParser) RemoveSection(section string) {
 		return
 	}
 	delete(this.sections, section)
-	container.Remove(&this.sectionKeys, section)
+
+	var index = -1
+	for i, key := range this.sectionKeys {
+		if key == section {
+			index = i
+			break
+		}
+	}
+
+	if index >= 0 {
+		this.sectionKeys = append(this.sectionKeys[0:index], this.sectionKeys[index+1:]...)
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////

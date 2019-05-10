@@ -1,9 +1,5 @@
 package ini4go
 
-import (
-	"github.com/smartwalle/container"
-)
-
 type Section struct {
 	name       string
 	optionKeys []string
@@ -62,7 +58,18 @@ func (this *Section) NewOption(key, iv string, value, comments []string) *Option
 
 func (this *Section) RemoveOption(key string) {
 	delete(this.options, key)
-	container.Remove(&this.optionKeys, key)
+
+	var index = -1
+	for i, opt := range this.optionKeys {
+		if opt == key {
+			index = i
+			break
+		}
+	}
+
+	if index >= 0 {
+		this.optionKeys = append(this.optionKeys[0:index], this.optionKeys[index+1:]...)
+	}
 }
 
 func (this *Section) HasOption(key string) bool {
