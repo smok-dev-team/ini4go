@@ -226,6 +226,9 @@ func (this *iniParser) WriteToFile(file string) error {
 	if err != nil {
 		return err
 	}
+
+	f.Truncate(0)
+
 	err = this.writeTo(f)
 	f.Close()
 	return err
@@ -237,7 +240,11 @@ func (this *iniParser) writeTo(w io.Writer) error {
 
 	var writer = bufio.NewWriter(w)
 
-	for _, sectionName := range this.sectionKeys {
+	for index, sectionName := range this.sectionKeys {
+
+		if index > 0 {
+			writer.WriteByte('\n')
+		}
 
 		var section = this.section(sectionName)
 		for _, c := range section.Comments() {
@@ -262,7 +269,6 @@ func (this *iniParser) writeTo(w io.Writer) error {
 				writer.WriteString(fmt.Sprintf("%s %s %s\n", opt.key, opt.iv, value))
 			}
 		}
-		writer.WriteByte('\n')
 	}
 	return writer.Flush()
 }
