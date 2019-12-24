@@ -9,7 +9,6 @@ import (
 	"time"
 )
 
-////////////////////////////////////////////////////////////////////////////////
 var varRegexp = regexp.MustCompile(`%\((\S[^\(\)]+)\)s`)
 
 func getVarName(src string) [][]string {
@@ -17,7 +16,6 @@ func getVarName(src string) [][]string {
 	return rList
 }
 
-////////////////////////////////////////////////////////////////////////////////
 type Option struct {
 	section  *Section
 	key      string
@@ -107,7 +105,6 @@ func (this *Option) AddValue(v ...string) {
 	}
 }
 
-////////////////////////////////////////////////////////////////////////////////
 func (this *Option) String() string {
 	return this.Value()
 }

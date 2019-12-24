@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
@@ -17,7 +18,6 @@ const (
 	kDefaultSection = "default"
 )
 
-////////////////////////////////////////////////////////////////////////////////
 var sectionRegexp = regexp.MustCompile(`^\[(?P<header>[^]]+)\]$`)
 
 func getSectionName(src string) (name string) {
@@ -38,7 +38,6 @@ func getOptionAndValue(src string) (option, vi, value string) {
 	return option, vi, value
 }
 
-////////////////////////////////////////////////////////////////////////////////
 type Ini struct {
 	iniParser
 }
@@ -50,14 +49,12 @@ type Ini struct {
 func New(block bool) *Ini {
 	var c = &Ini{}
 	c.block = block
-	c.mutex = &sync.RWMutex{}
 	c.init()
 	return c
 }
 
-////////////////////////////////////////////////////////////////////////////////
 type iniParser struct {
-	mutex        *sync.RWMutex
+	mutex        sync.RWMutex
 	sectionKeys  []string
 	sections     map[string]*Section
 	block        bool
@@ -143,6 +140,11 @@ func (this *iniParser) LoadFiles(files ...string) error {
 	defer this.Unlock()
 
 	for _, file := range files {
+		var ext = filepath.Ext(file)
+		if ext != ".ini" && ext != ".conf" {
+			continue
+		}
+
 		var f, err = os.OpenFile(file, os.O_RDONLY, 0)
 		if err != nil {
 			return err
@@ -273,7 +275,6 @@ func (this *iniParser) writeTo(w io.Writer) error {
 	return writer.Flush()
 }
 
-////////////////////////////////////////////////////////////////////////////////
 func (this *iniParser) Reset() {
 	this.Lock()
 	this.Unlock()
@@ -366,7 +367,6 @@ func (this *iniParser) RemoveSection(section string) {
 	}
 }
 
-////////////////////////////////////////////////////////////////////////////////
 func (this *iniParser) mustOption(section, option string) *Option {
 	var s = this.mustSection(section)
 	var opt = s.MustOption(option)
@@ -438,7 +438,6 @@ func (this *iniParser) RemoveOption(section, option string) {
 	}
 }
 
-////////////////////////////////////////////////////////////////////////////////
 func (this *iniParser) SetValue(section, option, value string) {
 	this.Lock()
 	defer this.Unlock()
@@ -472,7 +471,6 @@ func (this *iniParser) SetBool(section, option string, value bool) {
 	this.SetValue(section, option, fmt.Sprintf("%t", value))
 }
 
-////////////////////////////////////////////////////////////////////////////////
 func (this *iniParser) GetValue(section, option string) string {
 	return this.MustValue(section, option, "")
 }
