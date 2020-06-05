@@ -3,16 +3,14 @@ package ini4go
 type Section struct {
 	name       string
 	optionKeys []string
-	// options    map[string]*Option
-	options    sync.Map
+	options    map[string]*Option
 	comments   []string
 }
 
 func NewSection(name string) *Section {
 	var section = &Section{}
 	section.name = name
-	// section.options = make(map[string]*Option)
-	section.options = sync.Map{}
+	section.options = make(map[string]*Option)
 	return section
 }
 

@@ -56,8 +56,7 @@ func New(block bool) *Ini {
 type iniParser struct {
 	mutex        sync.RWMutex
 	sectionKeys  []string
-	// sections     map[string]*Section
-	sections     sync.Map
+	sections     map[string]*Section
 	block        bool
 	uniqueOption bool
 }
@@ -92,8 +91,7 @@ func (this *iniParser) SetUniqueOption(unique bool) {
 
 func (this *iniParser) init() {
 	this.sectionKeys = nil
-	// this.sections = make(map[string]*Section)
-	this.sections = sync.Map{}
+	this.sections = make(map[string]*Section)
 }
 
 func (this *iniParser) Load(dir string) error {
