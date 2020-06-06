@@ -285,7 +285,7 @@ func (this *iniParser) newSection(name string) *Section {
 	var section, _ = this.sections.Load(name)
 	if section == nil {
 		section = NewSection(name)
-		this.sections.LoadOrStore(name, section)
+		this.sections.Store(name, section)
 		this.sectionKeys = append(this.sectionKeys, name)
 	}
 	return section.(*Section)

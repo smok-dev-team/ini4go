@@ -39,7 +39,7 @@ func (this *Section) newOption(key, iv string) *Option {
 	opt, _ := this.options.Load(key)
 	if opt == nil {
 		opt = NewOption(this, key, iv, nil)
-		this.options.LoadOrStore(key, opt)
+		this.options.Store(key, opt)
 		this.optionKeys = append(this.optionKeys, key)
 	}
 	return opt.(*Option)
@@ -49,7 +49,7 @@ func (this *Section) NewOption(key, iv string, value, comments []string) *Option
 	opt, _ := this.options.Load(key)
 	if opt == nil {
 		opt = NewOption(this, key, iv, nil)
-		this.options.LoadOrStore(key, opt)
+		this.options.Store(key, opt)
 		this.optionKeys = append(this.optionKeys, key)
 	}
 
