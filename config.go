@@ -56,7 +56,7 @@ func New(block bool) *Ini {
 type iniParser struct {
 	mutex        sync.RWMutex
 	sectionKeys  []string
-	sections     map[string]*Section
+	sections     sync.Map
 	block        bool
 	uniqueOption bool
 }
@@ -91,7 +91,7 @@ func (this *iniParser) SetUniqueOption(unique bool) {
 
 func (this *iniParser) init() {
 	this.sectionKeys = nil
-	this.sections = make(map[string]*Section)
+	this.sections = sync.Map{}
 }
 
 func (this *iniParser) Load(dir string) error {
@@ -282,13 +282,13 @@ func (this *iniParser) Reset() {
 }
 
 func (this *iniParser) newSection(name string) *Section {
-	var section = this.sections[name]
+	var section, _ = this.sections.Load(name)
 	if section == nil {
 		section = NewSection(name)
-		this.sections[name] = section
+		this.sections.LoadOrStore(name, section)
 		this.sectionKeys = append(this.sectionKeys, name)
 	}
-	return section
+	return section.(*Section)
 }
 
 func (this *iniParser) NewSection(name string) *Section {
@@ -307,8 +307,8 @@ func (this *iniParser) MustSection(name string) *Section {
 }
 
 func (this *iniParser) section(name string) *Section {
-	var s, _ = this.sections[name]
-	return s
+	var s, _ = this.sections.Load(name)
+	return s.(*Section)
 }
 
 func (this *iniParser) Section(name string) *Section {
@@ -330,10 +330,13 @@ func (this *iniParser) SectionList() []*Section {
 	this.RLock()
 	defer this.RUnlock()
 
-	var sList = make([]*Section, 0, len(this.sections))
-	for _, value := range this.sections {
-		sList = append(sList, value)
+	var sList = make([]*Section, 0)
+	// 遍历 this.options
+	f := func(key, value interface{}) bool {
+		sList = append(sList, value.(*Section))
+		return true
 	}
+	this.sections.Range(f)
 	return sList
 }
 
@@ -341,7 +344,7 @@ func (this *iniParser) HasSection(section string) bool {
 	this.RLock()
 	defer this.RUnlock()
 
-	var _, ok = this.sections[section]
+	var _, ok = this.sections.Load(section)
 	return ok
 }
 
@@ -352,7 +355,7 @@ func (this *iniParser) RemoveSection(section string) {
 	if strings.ToLower(section) == kDefaultSection {
 		return
 	}
-	delete(this.sections, section)
+	this.sections.Delete(section)
 
 	var index = -1
 	for i, key := range this.sectionKeys {
@@ -420,8 +423,8 @@ func (this *iniParser) HasOption(section, option string) bool {
 	this.RLock()
 	defer this.RUnlock()
 
-	if s, ok := this.sections[section]; ok {
-		if _, ok := s.options[option]; ok {
+	if s, ok := this.sections.Load(section); ok {
+		if _, ok := s.(*Section).options.Load(option); ok {
 			return true
 		}
 	}
@@ -432,9 +435,9 @@ func (this *iniParser) RemoveOption(section, option string) {
 	this.Lock()
 	defer this.Unlock()
 
-	var s = this.sections[section]
+	var s, _ = this.sections.Load(section)
 	if s != nil {
-		s.RemoveOption(option)
+		s.(*Section).RemoveOption(option)
 	}
 }
 
@@ -526,11 +529,11 @@ func (this *iniParser) GetValues(section, option string) []string {
 	this.RLock()
 	defer this.RUnlock()
 
-	var s = this.sections[section]
+	var s, _ = this.sections.Load(section)
 	if s != nil {
-		var opt = s.options[option]
+		var opt, _ = s.(*Section).options.Load(option)
 		if opt != nil {
-			return opt.Values()
+			return opt.(*Option).Values()
 		}
 	}
 	return nil

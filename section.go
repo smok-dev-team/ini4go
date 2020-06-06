@@ -1,16 +1,18 @@
 package ini4go
 
+import "sync"
+
 type Section struct {
 	name       string
 	optionKeys []string
-	options    map[string]*Option
+	options    sync.Map
 	comments   []string
 }
 
 func NewSection(name string) *Section {
 	var section = &Section{}
 	section.name = name
-	section.options = make(map[string]*Option)
+	section.options = sync.Map{}
 	return section
 }
 
@@ -34,31 +36,30 @@ func (this *Section) AddComment(comment string) {
 }
 
 func (this *Section) newOption(key, iv string) *Option {
-	var opt = this.options[key]
+	opt, _ := this.options.Load(key)
 	if opt == nil {
 		opt = NewOption(this, key, iv, nil)
-		this.options[key] = opt
+		this.options.LoadOrStore(key, opt)
 		this.optionKeys = append(this.optionKeys, key)
 	}
-	return opt
+	return opt.(*Option)
 }
 
 func (this *Section) NewOption(key, iv string, value, comments []string) *Option {
-	var opt = this.options[key]
+	opt, _ := this.options.Load(key)
 	if opt == nil {
 		opt = NewOption(this, key, iv, nil)
-		this.options[key] = opt
+		this.options.LoadOrStore(key, opt)
 		this.optionKeys = append(this.optionKeys, key)
 	}
 
-	opt.AddValue(value...)
-	opt.AddComment(comments...)
-	return opt
+	opt.(*Option).AddValue(value...)
+	opt.(*Option).AddComment(comments...)
+	return opt.(*Option)
 }
 
 func (this *Section) RemoveOption(key string) {
-	delete(this.options, key)
-
+	this.options.Delete(key)
 	var index = -1
 	for i, opt := range this.optionKeys {
 		if opt == key {
@@ -73,7 +74,7 @@ func (this *Section) RemoveOption(key string) {
 }
 
 func (this *Section) HasOption(key string) bool {
-	var _, ok = this.options[key]
+	_, ok := this.options.Load(key)
 	return ok
 }
 
@@ -83,8 +84,8 @@ func (this *Section) MustOption(key string) *Option {
 }
 
 func (this *Section) Option(key string) *Option {
-	var opt = this.options[key]
-	return opt
+	opt, _ := this.options.Load(key)
+	return opt.(*Option)
 }
 
 func (this *Section) OptionKeys() []string {
@@ -94,9 +95,13 @@ func (this *Section) OptionKeys() []string {
 }
 
 func (this *Section) OptionList() []*Option {
-	var oList = make([]*Option, 0, len(this.options))
-	for _, value := range this.options {
-		oList = append(oList, value)
+
+	var oList = make([]*Option, 0)
+	// 遍历 this.options
+	f := func(key, value interface{}) bool {
+		oList = append(oList, value.(*Option))
+		return true
 	}
+	this.options.Range(f)
 	return oList
 }
